@@ -39,7 +39,7 @@ export default function Menu(){
             </li>
             <li>
                 <a>
-                    Stats
+                    History
                     <span className="badge badge-xs badge-info"></span>
                 </a>
             </li>
