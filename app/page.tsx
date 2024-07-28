@@ -1,11 +1,10 @@
 import Image from "next/image";
+import Navbar from "@/app/components/Navbar";
 
 export default function Home() {
   return (
       <>
-          <h1>askLio</h1>
-          <button className="btn btn-primary">Primary</button>
-
+          <h1 className="">Welcome to askLio Document validation!</h1>
       </>
   );
 }
