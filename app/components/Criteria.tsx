@@ -32,12 +32,12 @@ export default function Criteria() {
         <div className="w-full max-w-md">
             <h1 className="text-2xl font-bold mb-4 text-center">User adds criteria</h1>
             <form onSubmit={handleSubmit} className="flex flex-col items-center">
-                <textarea
+                <input
+                    type="text"
                     value={keywords}
                     onChange={(e) => setKeywords(e.target.value)}
                     className="w-full p-2 border border-gray-300 rounded mb-4"
-                    placeholder="Enter keywords"
-                    rows={4}
+                    placeholder="Enter keyword"
                 />
                 <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
                     Submit
