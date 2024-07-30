@@ -29,22 +29,23 @@ export default function Criteria() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen py-2">
-            <h1 className="text-2xl font-bold mb-4">User adds criteria</h1>
+        <div className="w-full max-w-md">
+            <h1 className="text-2xl font-bold mb-4 text-center">User adds criteria</h1>
             <form onSubmit={handleSubmit} className="flex flex-col items-center">
-        <textarea
-            value={keywords}
-            onChange={(e) => setKeywords(e.target.value)}
-            className="p-2 border border-gray-300 rounded mb-4"
-            placeholder="Enter keywords"
-        />
-                <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded">
+                <textarea
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded mb-4"
+                    placeholder="Enter keywords"
+                    rows={4}
+                />
+                <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
                     Submit
                 </button>
             </form>
             {uploadLink && (
-                <div className="mt-4">
-                    <a href={uploadLink} className="text-blue-500 underline">
+                <div className="mt-4 text-center">
+                    <a href={uploadLink} className="text-blue-500 hover:text-blue-700 underline">
                         Upload your file here
                     </a>
                 </div>
