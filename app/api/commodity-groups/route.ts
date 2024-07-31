@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 
-interface Category {
+export interface Category {
     id: number;
     name: string;
 }
 
-interface CommodityGroup {
+export interface CommodityGroup {
     id: string;
     name: string;
     category: Category;
