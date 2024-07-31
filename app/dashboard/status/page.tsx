@@ -1,10 +1,10 @@
 import React from 'react';
-import New from "@/app/components/New";
+import Status from "@/app/components/Status";
 
-export default function Dashboard() {
+export default function DashboardStatusPage() {
     return (
         <div className="container mx-auto px-4 py-8">
-            <New />
+            <Status />
         </div>
     );
 }
