@@ -1,8 +1,8 @@
 'use client';
 
-import React, {useState, useEffect, FormEvent} from 'react';
+import React, {FormEvent, useEffect, useState} from 'react';
 import {CommodityGroup} from "@/app/api/commodity-groups/route";
-import {NewRequest} from "@/app/api/new-requests/route";
+import {NewRequest, OrderLine} from "@/app/api/new-requests/route";
 import SuccessFormAlert from "@/app/components/SuccessFormAlert";
 
 export default function RequestForm() {
@@ -23,6 +23,11 @@ export default function RequestForm() {
 
     const [submissionSuccess, setSubmissionSuccess] = useState<boolean>(false);
 
+    const [orderLines, setOrderLines] = useState<OrderLine[]>([
+        {description: '', unit_price: 0, amount: 0, unit: ''}
+    ]);
+
+
     useEffect(() => {
         const fetchCommodityGroups = async () => {
             try {
@@ -39,6 +44,29 @@ export default function RequestForm() {
         fetchCommodityGroups();
     }, []);
 
+    const handleOrderLineChange = (index: number, field: keyof OrderLine, value: string | number) => {
+        const updatedOrderLines = [...orderLines];
+        updatedOrderLines[index] = {...updatedOrderLines[index], [field]: value};
+        setOrderLines(updatedOrderLines);
+        calculateTotalCost(updatedOrderLines);
+    };
+
+    const calculateTotalCost = (lines: OrderLine[]) => {
+        const total = lines.reduce((sum, line) => sum + (line.unit_price * line.amount), 0);
+        setTotalCost(total);
+    };
+
+    const addOrderLine = () => {
+        setOrderLines([...orderLines, {description: '', unit_price: 0, amount: 0, unit: ''}]);
+    };
+
+    const removeOrderLine = (index: number) => {
+        const updatedOrderLines = orderLines.filter((_, i) => i !== index);
+        setOrderLines(updatedOrderLines);
+        calculateTotalCost(updatedOrderLines);
+    };
+
+
     const handleSubmit = async (event: FormEvent) => {
         event.preventDefault();
         const requestData: NewRequest = {
@@ -48,10 +76,7 @@ export default function RequestForm() {
             vat_id: vatId,
             commodity_group: selectedCommodityGroup,
             department: department,
-            description: description,
-            unit_price: unitPrice,
-            amount: amount,
-            unit: unit,
+            order_lines: orderLines,
             total_cost: totalCost,
         };
 
@@ -65,7 +90,8 @@ export default function RequestForm() {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to submit request');
+                const errorData = await response.json();
+                throw new Error(`Failed to submit request: ${JSON.stringify(errorData)}`);
             }
 
             const data = await response.json();
@@ -176,64 +202,82 @@ export default function RequestForm() {
                     </div>
 
                     <div className="divider">Order Lines</div>
+                    {orderLines.map((line, index) => (
+                        <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-2">
+                            <div className="form-control w-full">
+                                <label className="label">
+                                    <span className="label-text">Description</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="Description"
+                                    className="input input-bordered input-primary w-full"
+                                    value={line.description}
+                                    onChange={(e) => handleOrderLineChange(index, 'description', e.target.value)}
+                                    required
+                                />
+                            </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="form-control w-full">
-                            <label className="label">
-                                <span className="label-text">Description</span>
-                            </label>
-                            <input
-                                type="text"
-                                placeholder="e.g. Adobe Creative Cloud License"
-                                className="input input-bordered input-primary w-full"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                required
-                            />
-                        </div>
+                            <div className="form-control w-full">
+                                <label className="label">
+                                    <span className="label-text">Unit Price</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    placeholder="Unit Price"
+                                    className="input input-bordered input-primary w-full"
+                                    value={line.unit_price}
+                                    onChange={(e) => handleOrderLineChange(index, 'unit_price', parseFloat(e.target.value))}
+                                    required
+                                />
+                            </div>
 
-                        <div className="form-control w-full">
-                            <label className="label">
-                                <span className="label-text">Unit Price</span>
-                            </label>
-                            <input
-                                type="number"
-                                placeholder="e.g. 600"
-                                className="input input-bordered input-primary w-full"
-                                value={unitPrice}
-                                onChange={(e) => setUnitPrice(parseFloat(e.target.value))}
-                                required
-                            />
-                        </div>
+                            <div className="form-control w-full">
+                                <label className="label">
+                                    <span className="label-text">Amount</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    placeholder="Amount"
+                                    className="input input-bordered input-primary w-full"
+                                    value={line.amount}
+                                    onChange={(e) => handleOrderLineChange(index, 'amount', parseInt(e.target.value))}
+                                    required
+                                />
+                            </div>
 
-                        <div className="form-control w-full">
-                            <label className="label">
-                                <span className="label-text">Amount</span>
-                            </label>
-                            <input
-                                type="number"
-                                placeholder="e.g. 5"
-                                className="input input-bordered input-primary w-full"
-                                value={amount}
-                                onChange={(e) => setAmount(parseInt(e.target.value))}
-                                required
-                            />
-                        </div>
+                            <div className="form-control w-full">
+                                <label className="label">
+                                    <span className="label-text">Unit</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="Unit"
+                                    className="input input-bordered input-primary w-full"
+                                    value={line.unit}
+                                    onChange={(e) => handleOrderLineChange(index, 'unit', e.target.value)}
+                                    required
+                                />
+                            </div>
 
-                        <div className="form-control w-full">
-                            <label className="label">
-                                <span className="label-text">Unit</span>
-                            </label>
-                            <input
-                                type="text"
-                                placeholder="e.g. licenses"
-                                className="input input-bordered input-primary w-full"
-                                value={unit}
-                                onChange={(e) => setUnit(e.target.value)}
-                                required
-                            />
+                            <div className="form-control w-full">
+                                <label className="label">
+                                    <span className="label-text">&nbsp;</span>
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => removeOrderLine(index)}
+                                    className="btn btn-error"
+                                    disabled={orderLines.length === 1}
+                                >
+                                    Remove
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    ))}
+                    <button type="button" onClick={addOrderLine} className="btn btn-secondary mt-2">
+                        Add Order Line
+                    </button>
 
                     <div className="form-control w-full mt-4">
                         <label className="label">
@@ -241,11 +285,9 @@ export default function RequestForm() {
                         </label>
                         <input
                             type="number"
-                            placeholder="e.g. 3000"
                             className="input input-bordered input-primary w-full"
                             value={totalCost}
-                            onChange={(e) => setTotalCost(parseFloat(e.target.value))}
-                            required
+                            readOnly
                         />
                     </div>
 

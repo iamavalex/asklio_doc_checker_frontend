@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server';
 
+export interface OrderLine {
+    description: string;
+    unit_price: number;
+    amount: number;
+    unit: string;
+}
+
 export interface NewRequest {
     requestor_name: string;
     title: string;
@@ -7,10 +14,7 @@ export interface NewRequest {
     vat_id: string;
     commodity_group: string;
     department: string;
-    description: string;
-    unit_price: number;
-    amount: number;
-    unit: string;
+    order_lines: OrderLine[];
     total_cost: number;
 }
 
