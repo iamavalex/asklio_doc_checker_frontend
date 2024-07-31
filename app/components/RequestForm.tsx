@@ -1,6 +1,38 @@
-import React from 'react';
+'use client';
+
+import React, {useState, useEffect} from 'react';
+
+interface Category {
+    id: number;
+    name: string;
+}
+
+interface CommodityGroup {
+    id: string;
+    name: string;
+    category: Category;
+}
 
 export default function RequestForm() {
+
+    const [commodityGroups, setCommodityGroups] = useState<CommodityGroup[]>([]);
+    const [selectedCommodityGroup, setSelectedCommodityGroup] = useState<string>('');
+
+    useEffect(() => {
+        const fetchCommodityGroups = async () => {
+            try {
+                const response = await fetch('/api/commodity-groups');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch commodity groups');
+                }
+                const data: CommodityGroup[] = await response.json();
+                setCommodityGroups(data);
+            } catch (error) {
+                console.error('Error fetching commodity groups:', error);
+            }
+        };
+        fetchCommodityGroups();
+    }, []);
     return (
         <div className="bg-base-200 p-2">
             <form className="card bg-base-100 shadow-xl w-full max-w-4xl">
@@ -56,11 +88,18 @@ export default function RequestForm() {
                             <label className="label">
                                 <span className="label-text">Commodity Group</span>
                             </label>
-                            <input
-                                type="text"
-                                placeholder="e.g. Software Licenses"
-                                className="input input-bordered input-primary w-full"
-                            />
+                            <select
+                                value={selectedCommodityGroup}
+                                onChange={(e) => setSelectedCommodityGroup(e.target.value)}
+                                className="select select-bordered select-primary w-full"
+                            >
+                                <option value="">Select a Commodity Group</option>
+                                {commodityGroups.map((group) => (
+                                    <option key={group.id} value={group.id}>
+                                        {group.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div className="form-control w-full">
