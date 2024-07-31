@@ -56,7 +56,7 @@ export default function RequestForm() {
         };
 
         try {
-            const response = await fetch('/api/manual-requests', {
+            const response = await fetch('/api/new-requests', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
