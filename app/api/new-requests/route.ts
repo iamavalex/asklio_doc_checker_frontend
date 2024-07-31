@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-export interface ManualRequest {
+export interface NewRequest {
     requestor_name: string;
     title: string;
     vendor_name: string;
@@ -16,9 +16,9 @@ export interface ManualRequest {
 
 export async function POST(request: Request) {
     try {
-        const manualRequest: ManualRequest = await request.json();
+        const manualRequest: NewRequest = await request.json();
 
-        const response = await fetch('http://127.0.0.1:8000/api/manual-requests/', {
+        const response = await fetch('http://127.0.0.1:8000/api/new-requests/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

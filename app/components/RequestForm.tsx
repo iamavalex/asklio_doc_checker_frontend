@@ -2,7 +2,8 @@
 
 import React, {useState, useEffect, FormEvent} from 'react';
 import {CommodityGroup} from "@/app/api/commodity-groups/route";
-import {ManualRequest} from "@/app/api/manual-requests/route";
+import {NewRequest} from "@/app/api/new-requests/route";
+import SuccessFormAlert from "@/app/components/SuccessFormAlert";
 
 export default function RequestForm() {
 
@@ -19,6 +20,8 @@ export default function RequestForm() {
     const [amount, setAmount] = useState<number>(0);
     const [unit, setUnit] = useState<string>('');
     const [totalCost, setTotalCost] = useState<number>(0);
+
+    const [submissionSuccess, setSubmissionSuccess] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchCommodityGroups = async () => {
@@ -38,7 +41,7 @@ export default function RequestForm() {
 
     const handleSubmit = async (event: FormEvent) => {
         event.preventDefault();
-        const requestData: ManualRequest = {
+        const requestData: NewRequest = {
             requestor_name: requestorName,
             title: title,
             vendor_name: vendorName,
@@ -67,16 +70,20 @@ export default function RequestForm() {
 
             const data = await response.json();
             console.log('Request submitted successfully:', data);
+            setSubmissionSuccess(true);
+            setTimeout(() => {
+                setSubmissionSuccess(false);
+            }, 3000);
         } catch (error) {
             console.error('Error submitting request:', error);
         }
     };
     return (
         <div className="bg-base-200 p-2">
+            {submissionSuccess && <SuccessFormAlert/>}
             <form className="card bg-base-100 shadow-xl w-full max-w-4xl" onSubmit={handleSubmit}>
                 <div className="card-body">
                     <h2 className="card-title text-3xl font-bold mb-6">New Procurement Request</h2>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="form-control w-full">
                             <label className="label">
