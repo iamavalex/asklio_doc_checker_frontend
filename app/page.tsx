@@ -27,14 +27,14 @@ export default function Home() {
                     link="https://www.asklio.ai/"
                 />
                 <Card
-                    title="Cost Savings"
-                    description="Optimize your spending and reduce costs with our advanced analytics."
+                    title="AI Requests"
+                    description="Create and organize new requests for procurement°"
                     link="/dashboard"
                     badge="New!"
                 />
                 <Card
-                    title="Supplier Management"
-                    description="Efficiently manage your suppliers and improve relationships."
+                    title="Match Order Lines"
+                    description="Match each order header with its corresponding order lines!"
                     link="/"
                     badge="New!"
 

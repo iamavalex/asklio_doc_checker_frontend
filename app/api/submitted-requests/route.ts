@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server';
+import {OrderLine} from "@/app/api/new-requests/route";
 
 export interface SubmittedRequest {
     id: number;
+    order_lines: OrderLine[];
     requestor_name: string;
     title: string;
     vendor_name: string;
     vat_id: string;
-    commodity_group: string;
     department: string;
-    description: string;
-    unit_price: number;
-    amount: number;
-    unit: string;
-    total_cost: number;
+    total_cost: string;
+    created_at: string;
     status: string;
+    uploaded_file: string | null;
+    commodity_group: string;
 }
 
 export async function GET() {

@@ -3,10 +3,10 @@ import { NextResponse } from 'next/server';
 export interface OrderLine {
     description: string;
     unit_price: number;
-    amount: number;
+    quantity: number;
     unit: string;
+    total_price: number;
 }
-
 export interface NewRequest {
     requestor_name: string;
     title: string;

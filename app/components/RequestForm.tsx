@@ -1,12 +1,15 @@
 'use client';
 
-import React, {FormEvent, useEffect, useState} from 'react';
-import {CommodityGroup} from "@/app/api/commodity-groups/route";
-import {NewRequest, OrderLine} from "@/app/api/new-requests/route";
+import React, { FormEvent, useEffect, useState } from 'react';
+import { CommodityGroup } from "@/app/api/commodity-groups/route";
+import { NewRequest, OrderLine } from "@/app/api/new-requests/route";
 import SuccessFormAlert from "@/app/components/SuccessFormAlert";
 
-export default function RequestForm() {
+interface RequestFormProps {
+    extractedData?: any;
+}
 
+export default function RequestForm({ extractedData }: RequestFormProps) {
     const [commodityGroups, setCommodityGroups] = useState<CommodityGroup[]>([]);
     const [selectedCommodityGroup, setSelectedCommodityGroup] = useState<string>('');
 
@@ -15,18 +18,13 @@ export default function RequestForm() {
     const [vendorName, setVendorName] = useState<string>('');
     const [vatId, setVatId] = useState<string>('');
     const [department, setDepartment] = useState<string>('');
-    const [description, setDescription] = useState<string>('');
-    const [unitPrice, setUnitPrice] = useState<number>(0);
-    const [amount, setAmount] = useState<number>(0);
-    const [unit, setUnit] = useState<string>('');
     const [totalCost, setTotalCost] = useState<number>(0);
 
     const [submissionSuccess, setSubmissionSuccess] = useState<boolean>(false);
 
     const [orderLines, setOrderLines] = useState<OrderLine[]>([
-        {description: '', unit_price: 0, amount: 0, unit: ''}
+        { description: '', unit_price: 0, quantity: 0, unit: '', total_price: 0 }
     ]);
-
 
     useEffect(() => {
         const fetchCommodityGroups = async () => {
@@ -44,20 +42,56 @@ export default function RequestForm() {
         fetchCommodityGroups();
     }, []);
 
+    useEffect(() => {
+        if (extractedData) {
+            console.log('Extracted Data:', extractedData);
+            setVendorName(extractedData.vendorName || '');
+            setVatId(extractedData.vatId || '');
+            setDepartment(extractedData.requestorDepartment || '');
+
+            if (extractedData.orderLines && extractedData.orderLines.length > 0) {
+                const newOrderLines = extractedData.orderLines.map((line: any) => {
+                    const unit_price = parseFloat((line.unit_price || '0').replace(/[€,]/g, '')) || 0;
+                    const quantity = parseFloat(line.quantity || '0') || 0;
+                    const total_price = unit_price * quantity;
+                    return {
+                        description: line.description || '',
+                        unit_price: unit_price,
+                        quantity: quantity,
+                        unit: '',
+                        total_price: total_price,
+                    };
+                });
+                setOrderLines(newOrderLines);
+            } else {
+                setOrderLines([{ description: '', unit_price: 0, quantity: 0, unit: '', total_price: 0 }]);
+            }
+        }
+    }, [extractedData]);
+
     const handleOrderLineChange = (index: number, field: keyof OrderLine, value: string | number) => {
         const updatedOrderLines = [...orderLines];
-        updatedOrderLines[index] = {...updatedOrderLines[index], [field]: value};
+        updatedOrderLines[index] = { ...updatedOrderLines[index], [field]: value };
+
+        if (field === 'unit_price' || field === 'quantity') {
+            const unitPrice = updatedOrderLines[index].unit_price || 0;
+            const quantity = updatedOrderLines[index].quantity || 0;
+            updatedOrderLines[index].total_price = unitPrice * quantity;
+        }
+
         setOrderLines(updatedOrderLines);
         calculateTotalCost(updatedOrderLines);
     };
 
+
+
     const calculateTotalCost = (lines: OrderLine[]) => {
-        const total = lines.reduce((sum, line) => sum + (line.unit_price * line.amount), 0);
-        setTotalCost(total);
+        const totalCost = lines.reduce((sum, line) => sum + (line.unit_price * line.quantity), 0);
+        setTotalCost(totalCost);
     };
 
     const addOrderLine = () => {
-        setOrderLines([...orderLines, {description: '', unit_price: 0, amount: 0, unit: ''}]);
+        setOrderLines([...orderLines, { description: '', unit_price: 0, quantity: 0, unit: '', total_price: 0 }]);
     };
 
     const removeOrderLine = (index: number) => {
@@ -65,7 +99,6 @@ export default function RequestForm() {
         setOrderLines(updatedOrderLines);
         calculateTotalCost(updatedOrderLines);
     };
-
 
     const handleSubmit = async (event: FormEvent) => {
         event.preventDefault();
@@ -79,6 +112,8 @@ export default function RequestForm() {
             order_lines: orderLines,
             total_cost: totalCost,
         };
+
+        console.log('Submitting request data:', requestData);
 
         try {
             const response = await fetch('/api/new-requests', {
@@ -104,9 +139,10 @@ export default function RequestForm() {
             console.error('Error submitting request:', error);
         }
     };
+
     return (
         <div className="bg-base-200 p-2">
-            {submissionSuccess && <SuccessFormAlert/>}
+            {submissionSuccess && <SuccessFormAlert />}
             <form className="card bg-base-100 shadow-xl w-full max-w-4xl" onSubmit={handleSubmit}>
                 <div className="card-body">
                     <h2 className="card-title text-3xl font-bold mb-6">New Procurement Request</h2>
@@ -234,14 +270,14 @@ export default function RequestForm() {
 
                             <div className="form-control w-full">
                                 <label className="label">
-                                    <span className="label-text">Amount</span>
+                                    <span className="label-text">Quantity</span>
                                 </label>
                                 <input
                                     type="number"
-                                    placeholder="Amount"
+                                    placeholder="Quantity"
                                     className="input input-bordered input-primary w-full"
-                                    value={line.amount}
-                                    onChange={(e) => handleOrderLineChange(index, 'amount', parseInt(e.target.value))}
+                                    value={line.quantity}
+                                    onChange={(e) => handleOrderLineChange(index, 'quantity', parseFloat(e.target.value))}
                                     required
                                 />
                             </div>
@@ -256,6 +292,19 @@ export default function RequestForm() {
                                     className="input input-bordered input-primary w-full"
                                     value={line.unit}
                                     onChange={(e) => handleOrderLineChange(index, 'unit', e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="form-control w-full">
+                                <label className="label">
+                                    <span className="label-text">Total Price</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    placeholder="Total price"
+                                    className="input input-bordered input-primary w-full"
+                                    value={line.total_price}
+                                    onChange={(e) => handleOrderLineChange(index, 'total_price', parseFloat(e.target.value))}
                                     required
                                 />
                             </div>

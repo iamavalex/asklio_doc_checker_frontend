@@ -33,7 +33,8 @@ export default function History() {
                             <thead>
                             <tr>
                                 <th>Title</th>
-                                <th>Commodity Group</th>
+                                <th>Vendor name</th>
+                                <th>Commodity group</th>
                                 <th>Department</th>
                                 <th>Status</th>
                             </tr>
@@ -42,6 +43,7 @@ export default function History() {
                             {requests.map(request => (
                                 <tr key={request.id} className="hover">
                                     <td>{request.title}</td>
+                                    <td>{request.vendor_name}</td>
                                     <td>{request.commodity_group}</td>
                                     <td>{request.department}</td>
                                     <td>{request.status}</td>
