@@ -149,7 +149,6 @@ export default function RequestForm({ extractedData }: RequestFormProps) {
                 const errorData = await response.json();
                 throw new Error(`Failed to submit request: ${JSON.stringify(errorData)}`);
             }
-
             const data = await response.json();
             console.log('Request submitted successfully:', data);
             setState((prevState) => ({ ...prevState, submission_success: true }));
