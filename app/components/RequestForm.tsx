@@ -9,108 +9,121 @@ interface RequestFormProps {
     extractedData?: any;
 }
 
+interface RequestFormState {
+    commodity_groups: CommodityGroup[];
+    selected_commodity_group: string;
+    requestor_name: string;
+    title: string;
+    vendor_name: string;
+    vat_id: string;
+    department: string;
+    total_cost: number;
+    submission_success: boolean;
+    order_lines: OrderLine[];
+}
+
 export default function RequestForm({ extractedData }: RequestFormProps) {
-    const [commodityGroups, setCommodityGroups] = useState<CommodityGroup[]>([]);
-    const [selectedCommodityGroup, setSelectedCommodityGroup] = useState<string>('');
-
-    const [requestorName, setRequestorName] = useState<string>('');
-    const [title, setTitle] = useState<string>('');
-    const [vendorName, setVendorName] = useState<string>('');
-    const [vatId, setVatId] = useState<string>('');
-    const [department, setDepartment] = useState<string>('');
-    const [totalCost, setTotalCost] = useState<number>(0);
-
-    const [submissionSuccess, setSubmissionSuccess] = useState<boolean>(false);
-
-    const [orderLines, setOrderLines] = useState<OrderLine[]>([
-        { description: '', unit_price: 0, quantity: 0, unit: '', total_price: 0 }
-    ]);
+    const [state, setState] = useState<RequestFormState>({
+        commodity_groups: [],
+        selected_commodity_group: '',
+        requestor_name: '',
+        title: '',
+        vendor_name: '',
+        vat_id: '',
+        department: '',
+        total_cost: 0,
+        submission_success: false,
+        order_lines: [{ description: '', unit_price: 0, quantity: 0, unit: '', total_price: 0 }],
+    });
 
     useEffect(() => {
-        const fetchCommodityGroups = async () => {
-            try {
-                const response = await fetch('/api/commodity-groups');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch commodity groups');
-                }
-                const data: CommodityGroup[] = await response.json();
-                setCommodityGroups(data);
-            } catch (error) {
-                console.error('Error fetching commodity groups:', error);
-            }
-        };
         fetchCommodityGroups();
-    }, []);
+    }, []); // Empty dependencies array because we only want to fetch commodity groups once on component mount
 
     useEffect(() => {
         if (extractedData) {
             console.log('Extracted Data:', extractedData);
-            setVendorName(extractedData.vendorName || '');
-            setVatId(extractedData.vatId || '');
-            setDepartment(extractedData.requestorDepartment || '');
-
-            if (extractedData.orderLines && extractedData.orderLines.length > 0) {
-                const newOrderLines = extractedData.orderLines.map((line: any) => {
-                    const unit_price = parseFloat((line.unit_price || '0').replace(/[€,]/g, '')) || 0;
-                    const quantity = parseFloat(line.quantity || '0') || 0;
-                    const total_price = unit_price * quantity;
-                    return {
+            setState((prevState) => ({
+                ...prevState,
+                vendor_name: extractedData.vendorName || '',
+                vat_id: extractedData.vatId || '',
+                department: extractedData.requestorDepartment || '',
+                selected_commodity_group: extractedData.commodity_group_id || '',
+                order_lines: extractedData.orderLines && extractedData.orderLines.length > 0
+                    ? extractedData.orderLines.map((line: any) => ({
                         description: line.description || '',
-                        unit_price: unit_price,
-                        quantity: quantity,
+                        unit_price: parseFloat((line.unit_price || '0').replace(/[€,]/g, '')) || 0,
+                        quantity: parseFloat(line.quantity || '0') || 0,
                         unit: '',
-                        total_price: total_price,
-                    };
-                });
-                setOrderLines(newOrderLines);
-            } else {
-                setOrderLines([{ description: '', unit_price: 0, quantity: 0, unit: '', total_price: 0 }]);
-            }
+                        total_price: (parseFloat((line.unit_price || '0').replace(/[€,]/g, '')) || 0) * (parseFloat(line.quantity || '0') || 0),
+                    }))
+                    : [{ description: '', unit_price: 0, quantity: 0, unit: '', total_price: 0 }],
+            }));
         }
-    }, [extractedData]);
+    }, [extractedData]); // Include extractedData as a dependency so the effect runs whenever it changes
+
+    const fetchCommodityGroups = async () => {
+        try {
+            const response = await fetch('/api/commodity-groups');
+            if (!response.ok) {
+                throw new Error('Failed to fetch commodity groups');
+            }
+            const data: CommodityGroup[] = await response.json();
+            setState((prevState) => ({ ...prevState, commodity_groups: data }));
+        } catch (error) {
+            console.error('Error fetching commodity groups:', error);
+            // Add error handling, e.g., show an error message to the user
+        }
+    };
+
+    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = event.target;
+        setState((prevState) => ({ ...prevState, [name]: value }));
+    };
 
     const handleOrderLineChange = (index: number, field: keyof OrderLine, value: string | number) => {
-        const updatedOrderLines = [...orderLines];
+        const updatedOrderLines = [...state.order_lines];
         updatedOrderLines[index] = { ...updatedOrderLines[index], [field]: value };
 
         if (field === 'unit_price' || field === 'quantity') {
-            const unitPrice = updatedOrderLines[index].unit_price || 0;
+            const unit_price = updatedOrderLines[index].unit_price || 0;
             const quantity = updatedOrderLines[index].quantity || 0;
-            updatedOrderLines[index].total_price = unitPrice * quantity;
+            updatedOrderLines[index].total_price = unit_price * quantity;
         }
 
-        setOrderLines(updatedOrderLines);
+        setState((prevState) => ({ ...prevState, order_lines: updatedOrderLines }));
         calculateTotalCost(updatedOrderLines);
     };
 
-
-
     const calculateTotalCost = (lines: OrderLine[]) => {
-        const totalCost = lines.reduce((sum, line) => sum + (line.unit_price * line.quantity), 0);
-        setTotalCost(totalCost);
+        const total_cost = lines.reduce((sum, line) => sum + (line.unit_price * line.quantity), 0);
+        setState((prevState) => ({ ...prevState, total_cost }));
     };
 
     const addOrderLine = () => {
-        setOrderLines([...orderLines, { description: '', unit_price: 0, quantity: 0, unit: '', total_price: 0 }]);
+        setState((prevState) => ({
+            ...prevState,
+            order_lines: [...prevState.order_lines, { description: '', unit_price: 0, quantity: 0, unit: '', total_price: 0 }],
+        }));
     };
 
     const removeOrderLine = (index: number) => {
-        const updatedOrderLines = orderLines.filter((_, i) => i !== index);
-        setOrderLines(updatedOrderLines);
+        const updatedOrderLines = state.order_lines.filter((_, i) => i !== index);
+        setState((prevState) => ({ ...prevState, order_lines: updatedOrderLines }));
         calculateTotalCost(updatedOrderLines);
     };
 
     const handleSubmit = async (event: FormEvent) => {
         event.preventDefault();
         const requestData: NewRequest = {
-            requestor_name: requestorName,
-            title: title,
-            vendor_name: vendorName,
-            vat_id: vatId,
-            commodity_group: selectedCommodityGroup,
-            department: department,
-            order_lines: orderLines,
-            total_cost: totalCost,
+            requestor_name: state.requestor_name,
+            title: state.title,
+            vendor_name: state.vendor_name,
+            vat_id: state.vat_id,
+            commodity_group: state.selected_commodity_group,
+            department: state.department,
+            order_lines: state.order_lines,
+            total_cost: state.total_cost,
         };
 
         console.log('Submitting request data:', requestData);
@@ -131,18 +144,19 @@ export default function RequestForm({ extractedData }: RequestFormProps) {
 
             const data = await response.json();
             console.log('Request submitted successfully:', data);
-            setSubmissionSuccess(true);
+            setState((prevState) => ({ ...prevState, submission_success: true }));
             setTimeout(() => {
-                setSubmissionSuccess(false);
+                setState((prevState) => ({ ...prevState, submission_success: false }));
             }, 3000);
         } catch (error) {
             console.error('Error submitting request:', error);
+            // Add error handling, e.g., show an error message to the user
         }
     };
 
     return (
         <div className="bg-base-200 p-2">
-            {submissionSuccess && <SuccessFormAlert />}
+            {state.submission_success && <SuccessFormAlert />}
             <form className="card bg-base-100 shadow-xl w-full max-w-4xl" onSubmit={handleSubmit}>
                 <div className="card-body">
                     <h2 className="card-title text-3xl font-bold mb-6">New Procurement Request</h2>
@@ -155,8 +169,9 @@ export default function RequestForm({ extractedData }: RequestFormProps) {
                                 type="text"
                                 placeholder="e.g. John Smith"
                                 className="input input-bordered input-primary w-full"
-                                value={requestorName}
-                                onChange={(e) => setRequestorName(e.target.value)}
+                                name="requestor_name"
+                                value={state.requestor_name}
+                                onChange={handleInputChange}
                                 required
                             />
                         </div>
@@ -169,8 +184,9 @@ export default function RequestForm({ extractedData }: RequestFormProps) {
                                 type="text"
                                 placeholder="e.g. Adobe Creative Cloud Subscription"
                                 className="input input-bordered input-primary w-full"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
+                                name="title"
+                                value={state.title}
+                                onChange={handleInputChange}
                                 required
                             />
                         </div>
@@ -183,8 +199,9 @@ export default function RequestForm({ extractedData }: RequestFormProps) {
                                 type="text"
                                 placeholder="e.g. Adobe Systems"
                                 className="input input-bordered input-primary w-full"
-                                value={vendorName}
-                                onChange={(e) => setVendorName(e.target.value)}
+                                name="vendor_name"
+                                value={state.vendor_name}
+                                onChange={handleInputChange}
                                 required
                             />
                         </div>
@@ -197,8 +214,9 @@ export default function RequestForm({ extractedData }: RequestFormProps) {
                                 type="text"
                                 placeholder="e.g. DE123456789"
                                 className="input input-bordered input-primary w-full"
-                                value={vatId}
-                                onChange={(e) => setVatId(e.target.value)}
+                                name="vat_id"
+                                value={state.vat_id}
+                                onChange={handleInputChange}
                                 required
                             />
                         </div>
@@ -208,13 +226,14 @@ export default function RequestForm({ extractedData }: RequestFormProps) {
                                 <span className="label-text">Commodity Group</span>
                             </label>
                             <select
-                                value={selectedCommodityGroup}
-                                onChange={(e) => setSelectedCommodityGroup(e.target.value)}
+                                name="selected_commodity_group"
+                                value={state.selected_commodity_group}
+                                onChange={handleInputChange}
                                 className="select select-bordered select-primary w-full"
                                 required
                             >
                                 <option value="">Select a Commodity Group</option>
-                                {commodityGroups.map((group) => (
+                                {state.commodity_groups.map((group) => (
                                     <option key={group.id} value={group.id}>
                                         {group.name}
                                     </option>
@@ -230,15 +249,16 @@ export default function RequestForm({ extractedData }: RequestFormProps) {
                                 type="text"
                                 placeholder="e.g. Marketing"
                                 className="input input-bordered input-primary w-full"
-                                value={department}
-                                onChange={(e) => setDepartment(e.target.value)}
+                                name="department"
+                                value={state.department}
+                                onChange={handleInputChange}
                                 required
                             />
                         </div>
                     </div>
 
                     <div className="divider">Order Lines</div>
-                    {orderLines.map((line, index) => (
+                    {state.order_lines.map((line, index) => (
                         <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-2">
                             <div className="form-control w-full">
                                 <label className="label">
@@ -317,7 +337,7 @@ export default function RequestForm({ extractedData }: RequestFormProps) {
                                     type="button"
                                     onClick={() => removeOrderLine(index)}
                                     className="btn btn-error"
-                                    disabled={orderLines.length === 1}
+                                    disabled={state.order_lines.length === 1}
                                 >
                                     Remove
                                 </button>
@@ -335,7 +355,7 @@ export default function RequestForm({ extractedData }: RequestFormProps) {
                         <input
                             type="number"
                             className="input input-bordered input-primary w-full"
-                            value={totalCost}
+                            value={state.total_cost}
                             readOnly
                         />
                     </div>

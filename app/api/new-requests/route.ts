@@ -7,6 +7,7 @@ export interface OrderLine {
     unit: string;
     total_price: number;
 }
+
 export interface NewRequest {
     requestor_name: string;
     title: string;
@@ -20,24 +21,24 @@ export interface NewRequest {
 
 export async function POST(request: Request) {
     try {
-        const manualRequest: NewRequest = await request.json();
+        const newRequest: NewRequest = await request.json();
 
         const response = await fetch('http://127.0.0.1:8000/api/new-requests/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(manualRequest),
+            body: JSON.stringify(newRequest),
         });
 
         if (!response.ok) {
-            throw new Error('Failed to submit manual request');
+            throw new Error('Failed to submit new request');
         }
 
         const data = await response.json();
         return NextResponse.json(data, { status: 201 });
     } catch (error) {
-        console.error('Error submitting manual request:', error);
-        return NextResponse.json({ error: 'Failed to submit manual request' }, { status: 500 });
+        console.error('Error submitting new request:', error);
+        return NextResponse.json({ error: 'Failed to submit new request' }, { status: 500 });
     }
 }
