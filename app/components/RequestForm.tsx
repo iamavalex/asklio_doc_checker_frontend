@@ -43,13 +43,8 @@ export default function RequestForm({ extractedData }: RequestFormProps) {
     useEffect(() => {
         if (extractedData) {
             console.log('Extracted Data:', extractedData);
-            setState((prevState) => ({
-                ...prevState,
-                vendor_name: extractedData.vendorName || '',
-                vat_id: extractedData.vatId || '',
-                department: extractedData.requestorDepartment || '',
-                selected_commodity_group: extractedData.commodity_group_id || '',
-                order_lines: extractedData.orderLines && extractedData.orderLines.length > 0
+            setState((prevState) => {
+                const updatedOrderLines = extractedData.orderLines && extractedData.orderLines.length > 0
                     ? extractedData.orderLines.map((line: any) => ({
                         description: line.description || '',
                         unit_price: parseFloat((line.unit_price || '0').replace(/[€,]/g, '')) || 0,
@@ -57,8 +52,21 @@ export default function RequestForm({ extractedData }: RequestFormProps) {
                         unit: '',
                         total_price: (parseFloat((line.unit_price || '0').replace(/[€,]/g, '')) || 0) * (parseFloat(line.quantity || '0') || 0),
                     }))
-                    : [{ description: '', unit_price: 0, quantity: 0, unit: '', total_price: 0 }],
-            }));
+                    : [{ description: '', unit_price: 0, quantity: 0, unit: '', total_price: 0 }];
+
+                const updatedState = {
+                    ...prevState,
+                    vendor_name: extractedData.vendorName || '',
+                    vat_id: extractedData.vatId || '',
+                    department: extractedData.requestorDepartment || '',
+                    selected_commodity_group: extractedData.commodity_group_id || '',
+                    order_lines: updatedOrderLines,
+                };
+
+                calculateTotalCost(updatedOrderLines);
+
+                return updatedState;
+            });
         }
     }, [extractedData]); // Include extractedData as a dependency so the effect runs whenever it changes
 
@@ -96,7 +104,7 @@ export default function RequestForm({ extractedData }: RequestFormProps) {
     };
 
     const calculateTotalCost = (lines: OrderLine[]) => {
-        const total_cost = lines.reduce((sum, line) => sum + (line.unit_price * line.quantity), 0);
+        const total_cost = lines.reduce((sum, line) => sum + line.total_price, 0);
         setState((prevState) => ({ ...prevState, total_cost }));
     };
 
